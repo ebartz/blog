@@ -1,0 +1,100 @@
+
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "EnvironmentName": {
+            "type": "string",
+            "metadata": {
+                "description": "Prefix of the environment"
+            }
+        },
+        "WorkspaceName": {
+            "type": "string",
+            "metadata": {
+               "description": "Name of the Log Analytics workspace."
+            }  
+        }
+    },
+    "variables": {
+        "savedSearches": [
+            {
+                "name": "",
+                "displayName": "",
+                "category": "",
+                "query": ""
+            }
+        ],
+        "alerts": [
+            {
+                "name": "",
+                "savedSearch": {
+                    "name": "",
+                    "displayName": "",
+                    "category": "",
+                    "query": ""
+                },
+                
+                "schedule": {
+                    "interval": "",
+                    "timeSpan": "",
+                    "enabled": ""
+                }
+            }
+        ]
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Insights/actionGroups",
+            "name": "[parameters('EnvironmentName')]",
+            "apiVersion": "2018-03-01",
+            "location": "Global",
+            "tags": {},
+            "properties": {
+                "groupShortName": "mc",
+                "enabled": true,
+                "emailReceivers": [],
+                "smsReceivers": [],
+                "webhookReceivers": [],
+                "itsmReceivers": [],
+                "azureAppPushReceivers": [],
+                "automationRunbookReceivers": [],
+                "voiceReceivers": [],
+                "logicAppReceivers": [],
+                "azureFunctionReceivers": []
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('WorkspaceName'), '/', variables('alerts')[copyIndex()].savedSearch.name)]",
+            "type": "Microsoft.OperationalInsights/workspaces/savedSearches",
+            "apiVersion": "2017-03-03-preview",
+            "copy": {
+              "name": "savedSearches",
+              "count": "[length(variables('savedSearches'))]"  
+            },
+            "tags": { },
+            "properties": {
+                "etag": "*",
+                "query": "[variables('savedSearches')[copyIndex()].query]",
+                "displayName": "[variables('savedSearches')[copyIndex()].displayName]",
+                "category": "[variables('savedSearches')[copyIndex()].category]"
+            }
+        },
+        {
+            "name": "[concat(parameters('WorkspaceName'), '/', variables('alerts')[copyIndex()].savedSearch, '/', variables('alerts')[copyIndex()].name)]",
+            "type": "Microsoft.OperationalInsights/workspaces/savedSearches/schedules",
+            "apiVersion": "2017-03-03-preview",
+            "dependsOn": [
+                "[concat('Microsoft.OperationalInsights/workspaces/', parameters('WorkspaceName'), '/savedSearches/', variables('alerts')[copyIndex()].savedSearch)]"
+            ],
+            "properties": {
+                "etag": "*",
+                "interval": "[variables('alerts')[copyIndex()].interval]",
+                "queryTimeSpan": "[variables('alerts')[copyIndex()].timeSpan]",
+                "enabled": "[variables('alerts')[copyIndex()].enabled]"
+            }
+        }
+    ],
+    "outputs": {}
+}
