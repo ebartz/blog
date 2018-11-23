@@ -2,10 +2,10 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "resourceGroupName": {
+        "ResourceGroupName": {
             "type": "string"
         },
-        "resourceGroupLocation": {
+        "ResourceGroupLocation": {
             "type": "string"
         }
     },
@@ -14,27 +14,31 @@
         "urlBase": "[concat('https://raw.githubusercontent.com/peterschen/blog/', variables('gitBranch'), '/')]",
         "urlTemplates": "[concat(variables('urlBase'), '/templates')]",
         "urlSamples": "[concat(variables('urlBase'), '/samples/monitoring-pipeline')]",
-        "nameResourceGroup": "[parameters('resourceGroupName')]",
-        "nameLogAnalytics": "[uniqueString(resourceGroup().id, deployment().name, 'loganalytics')]",
-        "nameApplicationInsights": "[uniqueString(resourceGroup().id, deployment().name, 'applicationinsights')]",
+        "location": "[parameters('ResourceGroupLocation')]",
+        "locationLogAnalytics": "[variables('location')]",
+        "locationApplicationInsights": "[variables('location')]",
+        "nameResourceGroup": "[parameters('ResourceGroupName')]",
+        "nameLogAnalytics": "[uniqueString(subscription().id, variables('nameResourceGroup'), deployment().name, 'loganalytics')]",
+        "nameApplicationInsights": "[uniqueString(subscription().id, variables('nameResourceGroup'), deployment().name, 'applicationinsights')]",
         "nameDeployment": "[deployment().name]",
         "nameDeploymentLogAnalytics": "[concat(variables('nameDeployment'), '-LogAnalytics')]",
         "nameDeploymentApplicationInsights": "[concat(variables('nameDeployment'), '-ApplicationInsights')]"
     },
     "resources": [
         {
-            "type": "Microsoft.Resources/resourceGroups",
             "apiVersion": "2018-05-01",
-            "location": "[parameters('resourceGroupLocation')]",
-            "name": "[parameters('resourceGroupName')]",
+            "type": "Microsoft.Resources/resourceGroups",
+            "name": "[variables('nameResourceGroup')]",
+            "location": "[variables('location')]",
             "properties": {}
         },
         {
+            "apiVersion": "2018-05-01",
             "type": "Microsoft.Resources/deployments",
             "name": "[variables('nameDeploymentLogAnalytics')]",
-            "apiVersion": "2017-05-10",
+            "resourceGroup": "[variables('nameResourceGroup')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Resources/resourceGroups/', parameters('resourceGroupName'))]"
+                "[resourceId('Microsoft.Resources/resourceGroups/', variables('nameResourceGroup'))]"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -46,23 +50,21 @@
                         "value": "[variables('nameLogAnalytics')]"
                     },
                     "Region": {
-                        "value": "[resourceGroup().location]"
+                        "value": "[variables('locationLogAnalytics')]"
                     },
                     "Tier": {
-                        "value": "PerGB2018"
+                        "value": "Standalone"
                     }
                 }
-            },
-            "dependsOn": [
-                "[concat('Microsoft.Resources/deployments/', variables('nameResourceGroup'))]"
-            ]
+            }
         },
         {
+            "apiVersion": "2018-05-01",
             "type": "Microsoft.Resources/deployments",
             "name": "[variables('nameDeploymentApplicationInsights')]",
-            "apiVersion": "2017-05-10",
+            "resourceGroup": "[variables('nameResourceGroup')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Resources/resourceGroups/', parameters('resourceGroupName'))]"
+                "[resourceId('Microsoft.Resources/resourceGroups/', variables('nameResourceGroup'))]"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -74,16 +76,13 @@
                         "value": "[variables('nameApplicationInsights')]"
                     },
                     "Region": {
-                        "value": "[resourceGroup().location]"
+                        "value": "[variables('locationApplicationInsights')]"
                     },
                     "Type": {
                         "value": "web"
                     }
                 }
-            },
-            "dependsOn": [
-                "[concat('Microsoft.Resources/deployments/', variables('nameResourceGroup'))]"
-            ]
+            }
         }
     ],
     "outputs":{
