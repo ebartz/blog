@@ -1,0 +1,59 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "Name": {
+            "type": "string",
+            "metadata": {
+               "description": "Name of the Application Insights app."
+            }
+        },
+        "Region": {
+            "type": "string",
+            "defaultValue": "westeurope",
+            "allowedValues": [
+                "canadacentral",
+                "centralindia",
+                "eastus",
+                "northeurope",
+                "southcentralus",
+                "southeastasia",
+                "westeurope",
+                "westus2",
+            ]
+        },
+        "Type": {
+            "type": "string",
+            "defaultValue": "web",
+            "allowedValues": [
+                "web",
+                "other"
+            ],
+            "metadata": {
+               "description": "Type of the application monitored by Application Insights."
+            }
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "apiVersion": "2015-05-01",
+            "type": "Microsoft.Insights/components",
+            "location": "[parameters('Region')]",
+            "name": "[parameters('Name')]",
+            "dependsOn": [],
+            "properties": {
+                "Application_Type": "[parameters('Type')]",
+                "Flow_Type": "Greenfield",
+                "Request_Source": "ARM"
+            },
+            "kind": "[parameters('Type')]"
+        }
+    ],
+    "outputs": {
+        "InstrumentationKey": {
+            "type": "string",
+            "value": "[reference(concat('Microsoft.Insights/components/', parameters('Name'))).InstrumentationKey]"
+        }
+    }
+}
